@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Desmadre & Encuentros Morelos - Watermark Edition</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;900&family=Bebas+Neue&family=Caveat:wght@700&family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #FF0066; /* Un color más vibrante para el tema */
+            --bg: #1a0a1f; /* Fondo oscuro y ligeramente morado */
+            --panel: #330033; /* Panel más oscuro y morado */
+            --border: rgba(255, 255, 255, 0.1);
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: white;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            height: 100dvh; /* Altura dinámica para móviles */
+            overflow: hidden;
+        }
+
+        /* CONTENEDOR PRINCIPAL */
+        .main-container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        /* PANEL DE CONTROLES (SIDEBAR) */
+        .sidebar {
+            width: 100%;
+            background: var(--panel);
+            padding: 12px;
+            z-index: 10;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+            border-bottom: 2px solid var(--primary);
+            overflow-y: auto;
+            max-height: 50vh; /* Ocupa máximo la mitad en móviles */
+        }
+
+        .controls-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+
+        h1 { 
+            grid-column: span 2; 
+            font-size: 1rem; /* Un poco más grande para el título */
+            margin: 0 0 10px 0; 
+            text-align: center;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 1.5px; /* Más espacio entre letras */
+            font-family: 'Bebas Neue', sans-serif; /* Fuente impactante para el título */
+        }
+
+        .control-group { display: flex; flex-direction: column; gap: 4px; }
+        .full-width { grid-column: span 2; }
+
+        label { font-size: 0.65rem; text-transform: uppercase; color: #f8e1fa; font-weight: bold; } /* Color de label más claro */
+
+        input[type="text"], select {
+            background: rgba(0,0,0,0.4); /* Más oscuro */
+            border: 1px solid var(--border);
+            padding: 8px;
+            color: white;
+            border-radius: 6px;
+            font-size: 13px;
+            width: 100%;
+            outline: none;
+        }
+
+        input[type="color"] {
+            -webkit-appearance: none;
+            border: 1px solid var(--border);
+            width: 100%;
+            height: 35px;
+            cursor: pointer;
+            background: none;
+            border-radius: 6px;
+            padding: 2px;
+        }
+
+        /* SLIDERS */
+        .range-box { display: flex; align-items: center; gap: 6px; }
+        input[type="range"] { flex: 1; accent-color: var(--primary); height: 4px; }
+        .val { font-size: 0.7rem; color: var(--primary); min-width: 30px; font-weight: bold; } /* Valores de slider ligeramente más grandes */
+
+        /* AREA DE PREVISUALIZACIÓN */
+        .preview-pane {
+            flex: 1;
+            overflow: auto;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #000;
+            padding: 10px;
+            position: relative;
+        }
+
+        canvas {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            box-shadow: 0 0 30px rgba(0,0,0,0.7); /* Sombra más pronunciada */
+            background-image: linear-gradient(45deg, #220022 25%, transparent 25%), linear-gradient(-45deg, #220022 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #220022 75%), linear-gradient(-45deg, transparent 75%, #220022 75%); /* Fondo de checkerboard más oscuro */
+            background-size: 15px 15px;
+        }
+
+        /* BOTONES */
+        .file-input-label {
+            background: rgba(255, 0, 102, 0.15); /* Color de primary con opacidad */
+            border: 1px dashed var(--primary);
+            padding: 10px;
+            text-align: center;
+            border-radius: 6px;
+            font-size: 0.75rem; /* Un poco más grande */
+            color: var(--primary);
+            cursor: pointer;
+            display: block;
+            margin-bottom: 5px;
+            transition: background 0.3s ease; /* Transición suave al pasar el mouse */
+        }
+
+        .file-input-label:hover {
+            background: rgba(255, 0, 102, 0.3);
+        }
+
+        .btn-download {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 14px; /* Más padding */
+            border-radius: 8px;
+            font-weight: 800;
+            font-size: 1rem; /* Más grande */
+            text-transform: uppercase;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+            grid-column: span 2;
+            transition: background 0.3s ease, transform 0.1s ease; /* Transiciones */
+        }
+
+        .btn-download:hover {
+            background: #e6005c; /* Un tono un poco más oscuro al pasar el mouse */
+            transform: translateY(-1px);
+        }
+
+        .btn-download:disabled { 
+            background: #475569; 
+            opacity: 0.6; 
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* RESPONSIVE DESKTOP (PC) */
+        @media (min-width: 900px) {
+            body { flex-direction: row; }
+            .sidebar { 
+                width: 350px; 
+                height: 100vh; 
+                max-height: 100vh;
+                border-bottom: none; 
+                border-right: 2px solid var(--primary); 
+            }
+            .controls-grid { grid-template-columns: 1fr; }
+            .full-width { grid-column: span 1; }
+            .btn-download { grid-column: span 1; }
+            h1 { grid-column: span 1; font-size: 1.5rem; } /* Título más grande en desktop */
+        }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <h1>Desmadre & Encuentros Morelos</h1>
+        
+        <div class="controls-grid">
+            <!-- CARGA DE IMAGEN -->
+            <div class="control-group full-width">
+                <label for="imageUpload" class="file-input-label" id="labelName">📸 SUBIR FOTO PICANTE</label>
+                <input type="file" id="imageUpload" accept="image/*" style="display:none">
+            </div>
+
+            <!-- MARCAS PREDEFINIDAS -->
+            <div class="control-group full-width">
+                <label>Marcas Especiales</label>
+                <select id="wm-presets">
+                    <option value="">-- Seleccionar Marca --</option>
+                    <option value="@Desmadre_Morelos">@Desmadre_Morelos</option>
+                    <option value="@Encuentros_Morelos">@Encuentros_Morelos</option>
+                    <option value="@SoloAdultosMorelos">@SoloAdultosMorelos</option>
+                    <option value="custom">✍️ Escribir Personalizada</option>
+                </select>
+            </div>
+
+            <!-- TEXTO MANUAL -->
+            <div class="control-group full-width">
+                <label>Tu Marca Personalizada</label>
+                <input type="text" id="wm-text" placeholder="@tu_cuenta_aquí">
+            </div>
+
+            <!-- FUENTE -->
+            <div class="control-group">
+                <label>Estilo de Letra</label>
+                <select id="wm-font">
+                    <option value="Montserrat">Moderna</option>
+                    <option value="Bebas Neue">Impactante</option>
+                    <option value="Caveat">Sensual</option>
+                    <option value="Inter">Clásica</option>
+                </select>
+            </div>
+
+            <!-- COLOR -->
+            <div class="control-group">
+                <label>Color de Marca</label>
+                <input type="color" id="wm-color" value="#FFFFFF">
+            </div>
+
+            <!-- OPACIDAD -->
+            <div class="control-group">
+                <label>Transparencia</label>
+                <div class="range-box">
+                    <input type="range" id="wm-opacity" min="0.05" max="1" step="0.05" value="0.25">
+                    <span class="val" id="val-op">25%</span>
+                </div>
+            </div>
+
+            <!-- TAMAÑO -->
+            <div class="control-group">
+                <label>Tamaño de Letra</label>
+                <div class="range-box">
+                    <input type="range" id="wm-size" min="10" max="300" value="60">
+                    <span class="val" id="val-size">60</span>
+                </div>
+            </div>
+
+            <!-- DENSIDAD -->
+            <div class="control-group">
+                <label>Espacio entre Marcas</label>
+                <div class="range-box">
+                    <input type="range" id="wm-gap" min="1" max="5" step="0.1" value="2.0">
+                    <span class="val" id="val-gap">2.0</span>
+                </div>
+            </div>
+
+            <!-- ROTACIÓN -->
+            <div class="control-group">
+                <label>Ángulo</label>
+                <div class="range-box">
+                    <input type="range" id="wm-rot" min="-180" max="180" value="-35">
+                    <span class="val" id="val-rot">-35°</span>
+                </div>
+            </div>
+
+            <!-- BOTÓN GUARDAR -->
+            <button id="download" class="btn-download" disabled>¡LISTO! BAJAR FOTO</button>
+        </div>
+    </div>
+
+    <div class="preview-pane">
+        <canvas id="canvas"></canvas>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d', { alpha: false });
+        const upload = document.getElementById('imageUpload');
+        const textInput = document.getElementById('wm-text');
+        const presetSelect = document.getElementById('wm-presets');
+        let mainImg = null;
+
+        const controls = ['wm-text', 'wm-color', 'wm-opacity', 'wm-size', 'wm-font', 'wm-gap', 'wm-rot'];
+
+        function draw() {
+            if (!mainImg) return;
+
+            // Mantener resolución original
+            canvas.width = mainImg.width;
+            canvas.height = mainImg.height;
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(mainImg, 0, 0);
+
+            const text = textInput.value || "@tu_cuenta_aquí"; // Texto por defecto ajustado
+            const size = parseInt(document.getElementById('wm-size').value);
+            const font = document.getElementById('wm-font').value;
+            const gapFactor = parseFloat(document.getElementById('wm-gap').value);
+            const rotation = parseInt(document.getElementById('wm-rot').value) * Math.PI / 180;
+            
+            let weight = (font === 'Montserrat') ? '900' : 'bold';
+            ctx.font = `${weight} ${size}px "${font}"`;
+            
+            const metrics = ctx.measureText(text);
+            const textWidth = metrics.width;
+            const stepX = textWidth * gapFactor;
+            const stepY = size * gapFactor * 1.5;
+
+            ctx.fillStyle = document.getElementById('wm-color').value;
+            ctx.globalAlpha = document.getElementById('wm-opacity').value;
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+
+            ctx.save();
+            ctx.translate(canvas.width / 2, canvas.height / 2);
+            ctx.rotate(rotation);
+
+            const limit = Math.max(canvas.width, canvas.height) * 2;
+
+            for (let x = -limit; x < limit; x += stepX) {
+                for (let y = -limit; y < limit; y += stepY) {
+                    let offset = (Math.round(y / stepY) % 2 === 0) ? 0 : stepX / 2;
+                    ctx.fillText(text, x + offset, y);
+   
