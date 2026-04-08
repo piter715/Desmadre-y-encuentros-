@@ -285,43 +285,140 @@
 
         const controls = ['wm-text', 'wm-color', 'wm-opacity', 'wm-size', 'wm-font', 'wm-gap', 'wm-rot'];
 
-        function draw() {
-            if (!mainImg) return;
+        // Función para cargar una imagen de placeholder
+        function loadPlaceholderImage() {
+            const placeholder = new Image();
+            placeholder.onload = () => {
+                mainImg = placeholder;
+                draw();
+                document.getElementById('download').disabled = true; // Deshabilitar descarga hasta que se suba una imagen real
+                document.getElementById('labelName').textContent = "📸 SUBIR FOTO PICANTE"; // Restaurar el texto
+            };
+            // Usar una imagen de datos base64 para evitar problemas de rutas
+            placeholder.src = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII='; // Un pequeño pixel transparente
+            // Para un placeholder más visual, podrías usar una imagen como:
+            // placeholder.src = 'https://via.placeholder.com/600x400/330033/FF0066?text=Carga+tu+foto+aquí';
+            // Pero esto requiere una conexión a internet, un pixel transparente es más robusto.
+            // O una imagen local base64 si tienes una.
+        }
 
-            // Mantener resolución original
+        function draw() {
+            if (!mainImg) {
+                // Si no hay imagen principal cargada (ni placeholder), intenta cargarla
+                loadPlaceholderImage();
+                return;
+            }
+
             canvas.width = mainImg.width;
             canvas.height = mainImg.height;
             
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.drawImage(mainImg, 0, 0);
 
-            const text = textInput.value || "@tu_cuenta_aquí"; // Texto por defecto ajustado
-            const size = parseInt(document.getElementById('wm-size').value);
-            const font = document.getElementById('wm-font').value;
-            const gapFactor = parseFloat(document.getElementById('wm-gap').value);
-            const rotation = parseInt(document.getElementById('wm-rot').value) * Math.PI / 180;
-            
-            let weight = (font === 'Montserrat') ? '900' : 'bold';
-            ctx.font = `${weight} ${size}px "${font}"`;
-            
-            const metrics = ctx.measureText(text);
-            const textWidth = metrics.width;
-            const stepX = textWidth * gapFactor;
-            const stepY = size * gapFactor * 1.5;
+            // Solo dibuja la marca de agua si hay una imagen real cargada por el usuario
+            if (upload.files.length > 0) {
+                const text = textInput.value || "@tu_cuenta_aquí";
+                const size = parseInt(document.getElementById('wm-size').value);
+                const font = document.getElementById('wm-font').value;
+                const gapFactor = parseFloat(document.getElementById('wm-gap').value);
+                const rotation = parseInt(document.getElementById('wm-rot').value) * Math.PI / 180;
+                
+                let weight = (font === 'Montserrat') ? '900' : 'bold';
+                ctx.font = `${weight} ${size}px "${font}"`;
+                
+                const metrics = ctx.measureText(text);
+                const textWidth = metrics.width;
+                const stepX = textWidth * gapFactor;
+                const stepY = size * gapFactor * 1.5;
 
-            ctx.fillStyle = document.getElementById('wm-color').value;
-            ctx.globalAlpha = document.getElementById('wm-opacity').value;
-            ctx.textAlign = "center";
-            ctx.textBaseline = "middle";
+                ctx.fillStyle = document.getElementById('wm-color').value;
+                ctx.globalAlpha = document.getElementById('wm-opacity').value;
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
 
-            ctx.save();
-            ctx.translate(canvas.width / 2, canvas.height / 2);
-            ctx.rotate(rotation);
+                ctx.save();
+                ctx.translate(canvas.width / 2, canvas.height / 2);
+                ctx.rotate(rotation);
 
-            const limit = Math.max(canvas.width, canvas.height) * 2;
+                const limit = Math.max(canvas.width, canvas.height) * 2;
 
-            for (let x = -limit; x < limit; x += stepX) {
-                for (let y = -limit; y < limit; y += stepY) {
-                    let offset = (Math.round(y / stepY) % 2 === 0) ? 0 : stepX / 2;
-                    ctx.fillText(text, x + offset, y);
-   
+                for (let x = -limit; x < limit; x += stepX) {
+                    for (let y = -limit; y < limit; y += stepY) {
+                        let offset = (Math.round(y / stepY) % 2 === 0) ? 0 : stepX / 2;
+                        ctx.fillText(text, x + offset, y);
+                    }
+                }
+                
+                ctx.restore();
+                document.getElementById('download').disabled = false; // Habilitar descarga solo si hay marca de agua
+            } else {
+                document.getElementById('download').disabled = true; // Si no hay foto, no se puede descargar
+            }
+        }
+
+        function updateUI() {
+            document.getElementById('val-op').textContent = Math.round(document.getElementById('wm-opacity').value * 100) + '%';
+            document.getElementById('val-size').textContent = document.getElementById('wm-size').value;
+            document.getElementById('val-gap').textContent = document.getElementById('wm-gap').value;
+            document.getElementById('val-rot').textContent = document.getElementById('wm-rot').value + '°';
+            draw(); // Redibujar siempre que un control cambie
+        }
+
+        presetSelect.addEventListener('change', () => {
+            if (presetSelect.value && presetSelect.value !== "custom") {
+                textInput.value = presetSelect.value;
+                textInput.disabled = true;
+            } else if (presetSelect.value === "custom") {
+                textInput.value = "";
+                textInput.disabled = false;
+                textInput.focus();
+            } else {
+                textInput.value = "@tu_cuenta_aquí";
+                textInput.disabled = false;
+            }
+            draw(); // Redibujar después de cambiar el preset
+        });
+
+        upload.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) {
+                mainImg = null; // Limpiar la imagen si no se selecciona archivo
+                loadPlaceholderImage(); // Cargar el placeholder de nuevo
+                return;
+            };
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                mainImg = new Image();
+                mainImg.onload = () => {
+                    draw();
+                    document.getElementById('labelName').textContent = "✅ ¡FOTO LISTA PARA MARCAR!";
+                };
+                mainImg.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+
+        controls.forEach(id => document.getElementById(id).addEventListener('input', updateUI));
+
+        document.getElementById('download').addEventListener('click', () => {
+            if (mainImg && upload.files.length > 0) { // Solo permitir descarga si hay una imagen real
+                const link = document.createElement('a');
+                link.download = `Desmadre_Morelos_Marcada_${Date.now()}.png`;
+                link.href = canvas.toDataURL('image/png', 1.0);
+                link.click();
+            }
+        });
+
+        // Asegúrate de cargar las fuentes y luego inicializar
+        document.fonts.ready.then(() => {
+            // Cargar la imagen de placeholder al inicio
+            loadPlaceholderImage();
+            // Asegurarse de que el input de texto personalizado esté habilitado por defecto si no hay preset seleccionado
+            if (presetSelect.value === "") {
+                textInput.disabled = false;
+            }
+            updateUI(); // Llamar a updateUI para inicializar los valores de los sliders y dibujar
+        });
+    </script>
+</body>
+</html>
